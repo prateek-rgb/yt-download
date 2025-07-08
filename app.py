@@ -2,9 +2,12 @@ from flask import Flask, request, jsonify, Response, send_from_directory
 import yt_dlp
 import os
 import time
+import uuid
 
 app = Flask(__name__)
-progress_state = {"percent": 0}
+DOWNLOAD_DIR = os.path.join(os.getcwd(), 'downloads')
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+progress_state = {}
 
 @app.route('/')
 def serve_html():
@@ -14,10 +17,9 @@ def serve_html():
 def download_progress():
     links = request.args.get("links", "").split(',')
     format_type = request.args.get("format", "Video")
-    folder = request.args.get("folder") or os.path.join(os.path.expanduser("~"), "Downloads")
     filename_template = request.args.get("filename") or '%(title)s.%(ext)s'
-
-    os.makedirs(folder, exist_ok=True)
+    job_id = str(uuid.uuid4())
+    progress_state[job_id] = 0
 
     def generate():
         def hook(d):
@@ -25,13 +27,13 @@ def download_progress():
                 total = d.get('total_bytes') or d.get('total_bytes_estimate')
                 downloaded = d.get('downloaded_bytes', 0)
                 percent = int(downloaded / total * 100) if total else 0
-                progress_state["percent"] = percent
+                progress_state[job_id] = percent
             elif d['status'] == 'finished':
-                progress_state["percent"] = 100
+                progress_state[job_id] = 100
 
         ydl_opts = {
             'format': 'bestaudio/best',
-            'outtmpl': os.path.join(folder, filename_template),
+            'outtmpl': os.path.join(DOWNLOAD_DIR, filename_template),
             'quiet': True,
             'noplaylist': False,
             'ignoreerrors': True,
@@ -53,8 +55,8 @@ def download_progress():
             print("Download failed:", str(e))
 
         for _ in range(101):
-            yield f"data: {{\"percent\": {progress_state['percent']}}}\n\n"
-            if progress_state['percent'] >= 100:
+            yield f"data: {{\"percent\": {progress_state[job_id]}}}\n\n"
+            if progress_state[job_id] >= 100:
                 break
             time.sleep(0.5)
 
@@ -62,10 +64,13 @@ def download_progress():
 
 @app.route('/reset-progress', methods=['POST'])
 def reset_progress():
-    global progress_state
-    progress_state = {"percent": 0}
+    progress_state.clear()
     return jsonify({"status": "Progress reset"}), 200
 
+@app.route('/downloads/<path:filename>')
+def serve_download(filename):
+    return send_from_directory(DOWNLOAD_DIR, filename, as_attachment=True)
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))  # Render uses dynamic PORT
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
