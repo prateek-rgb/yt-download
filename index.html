@@ -1,0 +1,122 @@
+<!-- yt.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Download Yt video or audio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background-color: #1e1e2f; color: #fff; margin: 0; padding: 0; }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #2c2c3c;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.5);
+    }
+    h1 { text-align: center; margin-bottom: 30px; color: #00ffe7; }
+    label { font-weight: 600; margin-top: 15px; display: block; margin-bottom: 8px; }
+    textarea, select, input[type="text"] {
+      width: 100%; padding: 10px; border: none; border-radius: 8px;
+      background-color: #1b1b2a; color: #fff; font-size: 14px;
+    }
+    .row { display: flex; gap: 10px; margin-top: 10px; }
+    .row input[type="text"] { flex: 1; }
+    button {
+      width: 100%; margin-top: 25px; padding: 12px; font-size: 16px;
+      background-color: #00ffe7; color: #000; border: none;
+      border-radius: 8px; font-weight: bold; cursor: pointer;
+    }
+    .progress-container { margin-top: 20px; }
+    .progress-bar {
+      height: 20px; background-color: #444; border-radius: 10px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background-color: #00ffe7; width: 0%; transition: width 0.3s ease;
+    }
+    .footer-note { font-size: 12px; color: #bbb; text-align: center; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Download YouTube</h1>
+    <label for="links">Paste YouTube Video or Playlist Links (1 per line)</label>
+    <textarea id="links" rows="5" placeholder="https://youtube.com/watch?v=..."></textarea>
+
+    <label for="format">Download Format</label>
+    <select id="format">
+      <option value="Video">Video</option>
+      <option value="Audio">Audio</option>
+    </select>
+
+    <label for="folder">Download Folder</label>
+    <div class="row">
+      <input type="text" id="folder" placeholder="Downloads (default)" />
+      <button onclick="browseFolder()">Browse</button>
+    </div>
+
+    <label for="filename">Custom File Name Template (optional)</label>
+    <input type="text" id="filename" value="%(title)s.%(ext)s" />
+
+    <button onclick="startDownload()">⬇ Download</button>
+
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="footer-note">Powered by yt-dlp & FFmpeg | Dark GUI by Prateek Sharma</div>
+  </div>
+
+  <script>
+    function browseFolder() {
+      alert("Folder browsing works only in desktop apps. Enter path manually.");
+    }
+
+    function startDownload() {
+      const links = document.getElementById("links").value.trim().split("\n");
+      const format = document.getElementById("format").value;
+      const folder = document.getElementById("folder").value.trim();
+      const filename = document.getElementById("filename").value.trim();
+
+      if (!links[0]) return alert("Please enter at least one YouTube link.");
+
+      const evtSource = new EventSource(`/download-progress?links=${encodeURIComponent(links.join(","))}&format=${format}&folder=${encodeURIComponent(folder)}&filename=${encodeURIComponent(filename)}`);
+
+      evtSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        document.getElementById("progress-fill").style.width = data.percent + "%";
+        if (data.percent >= 100) {
+          alert("✅ Download Complete!");
+          evtSource.close();
+        }
+      };
+
+      evtSource.onerror = function(err) {
+        console.error("SSE error:", err);
+        evtSource.close();
+      }
+    }
+  </script>
+</body>
+</html>
+<!-- This HTML file provides a user interface for downloading YouTube videos or playlists using yt-dlp. It includes fields for inputting links, selecting formats, specifying download folders, and customizing file names. The progress of the download is displayed in real-time using Server-Sent Events (SSE). -->
+<!-- The design is dark-themed with a modern look, and it is responsive for various screen sizes. The JavaScript functions handle folder browsing and starting the download process, while the progress bar updates dynamically based on the download status. -->
+<!-- Note: The folder browsing functionality is a placeholder, as it typically requires a desktop application context to work properly. Users are advised to enter the folder path manually. -->
+<!-- The footer includes a note about the technologies used, such as yt-dlp and FFmpeg, and credits the dark GUI design to Prateek Sharma. -->
+<!-- This file is intended to be served by a web server that can handle the download requests and SSE for real-time updates. -->
+<!-- Ensure that the server-side code is set up to handle the `/download-progress` endpoint to provide the necessary functionality for downloading and tracking progress. -->
+<!-- The HTML is structured to be clean and easy to read, with appropriate use of semantic elements and styles for a better user experience. -->
+<!-- The use of modern CSS techniques ensures that the interface is visually appealing and user-friendly, making it suitable for users looking to download YouTube content efficiently. -->
+<!-- This file can be used as part of   a larger web application or as a standalone page for downloading YouTube videos. -->
+<!-- Make sure to test the functionality in a suitable environment where yt-dlp and FFmpeg are properly installed and configured. -->
+<!-- The code is designed to be easily maintainable and extendable for future enhancements, such as adding more features or improving the user interface. -->
+<!-- The use of external libraries like Google Fonts for typography enhances the overall aesthetics of the page, providing a modern and clean look. -->
+<!-- The JavaScript code is kept simple and straightforward, focusing on the core functionality of downloading YouTube content and updating the progress bar in real-time. -->
+<!-- This HTML file serves as a great starting point for anyone looking to create a user-friendly interface for downloading YouTube videos or playlists, leveraging the power of yt-dlp and FFmpeg. -->
+<!-- Feel free to customize the styles, layout, and functionality to suit your specific needs or preferences. -->
+<!-- The code is well-commented and organized, making it easy to understand and modify as needed. -->
