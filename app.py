@@ -1,4 +1,3 @@
-# ytdownload.py
 from flask import Flask, request, jsonify, Response, send_from_directory
 import yt_dlp
 import os
@@ -53,7 +52,7 @@ def download_progress():
         except Exception as e:
             print("Download failed:", str(e))
 
-        for i in range(101):
+        for _ in range(101):
             yield f"data: {{\"percent\": {progress_state['percent']}}}\n\n"
             if progress_state['percent'] >= 100:
                 break
@@ -61,14 +60,12 @@ def download_progress():
 
     return Response(generate(), mimetype='text/event-stream')
 
-if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
 @app.route('/reset-progress', methods=['POST'])
 def reset_progress():
     global progress_state
     progress_state = {"percent": 0}
     return jsonify({"status": "Progress reset"}), 200
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
-# This code is a Flask application that allows users to download YouTube videos or audio files.
-# It provides an endpoint to serve an HTML page, another endpoint to handle download progress,
+    port = int(os.environ.get('PORT', 10000))  # Render uses dynamic PORT
+    app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
